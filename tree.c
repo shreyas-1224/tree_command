@@ -1,5 +1,4 @@
 #include<stdio.h>
-#include<unistd.h>
 #include<dirent.h>
 #include<stdlib.h>
 #include<string.h>
@@ -16,7 +15,11 @@ void file_properties(tree ,struct stat , char*);
 #define   TRUE	1
 #define   FALSE 0
 
-int count ;		
+int count ;	
+
+int no_of_directory = 0 ;
+int no_of_files = 0 ;
+
 
 int select_function(char* name){
 	
@@ -50,12 +53,13 @@ struct node* create_node(char* n){
 	newnode->child = NULL;
 	newnode->sibling = NULL;
 	
+	
 	return newnode;
 }
 
 
 
-struct node* create_tree(char *root_name , int choice ) {
+struct node* create_tree(char *root_name , int choice , queue* q ) {
 	
 	
 	
@@ -83,9 +87,9 @@ struct node* create_tree(char *root_name , int choice ) {
 	while((dr = readdir(dir)) != NULL)			// till we open the directories  .
 	{		
 	
-			if(choice == 1){			
+			if(choice == 3){			
 				
-				if(strcmp((dr->d_name),".") == 0 || strcmp((dr->d_name),"..") == 0  &&  strcmp(dr->d_name , ".git") == 0) 
+				if(strcmp(dr->d_name , ".git") != 0) 
 					temp = create_node(dr->d_name);
 					
 			
@@ -99,7 +103,7 @@ struct node* create_tree(char *root_name , int choice ) {
 			}
 			
 				
-			if(choice == 2){
+			if(choice == 1){
 				
 				if(strcmp((dr->d_name),".") != 0 && strcmp((dr->d_name),"..") != 0  ||  strcmp(dr->d_name , ".git") == 0) 
 					temp = create_node(dr->d_name);
@@ -114,7 +118,7 @@ struct node* create_tree(char *root_name , int choice ) {
 			}	
 			
 			
-			else if(choice == 3){
+			else if(choice == 2){
 				
 				if(strcmp((dr->d_name),".") != 0 && strcmp((dr->d_name),"..") != 0  &&  strcmp(dr->d_name , ".git") != 0
 					&& !(isdigit(dr->d_name[0]))) {
@@ -123,7 +127,7 @@ struct node* create_tree(char *root_name , int choice ) {
 					strcpy(temp->path,root_name);
 					strcat(temp->path,"/");
 					strcat(temp->path,dr->d_name);
-					//printf("%s\n",temp->path);
+					
 					//printf("%s\n",temp->path);	
 				}
 			
@@ -144,15 +148,19 @@ struct node* create_tree(char *root_name , int choice ) {
 			
 
 			if((dr->d_type) == DT_DIR ) {			// if its a directory 
-			
+				
+				no_of_directory++ ;
+				
 				temp->more_child = TRUE;
 				strcpy(name,root_name);
-				temp->child = create_tree((strcat((strcat(name,"/")),dr->d_name)),choice );
+				temp->child = create_tree((strcat((strcat(name,"/")),dr->d_name)),choice , q );
 				strcpy(name,root_name);
 			}
 			
 			else {
-			
+				
+				no_of_files++ ;
+				
 				temp->more_child = FALSE;
 				temp->child = NULL;		
 			}
@@ -201,6 +209,7 @@ void display_tree(tree root  , int dep , char* opt ){
  
     
  			printf("%s [",temp->name);
+ 			printf("\033[0;34m");
 			printf("File Permissions: \t");
     			printf( (S_ISDIR(fileStat.st_mode)) ? "d" : "-");
     			printf( (fileStat.st_mode & S_IRUSR) ? "r" : "-");
@@ -212,11 +221,14 @@ void display_tree(tree root  , int dep , char* opt ){
     			printf( (fileStat.st_mode & S_IROTH) ? "r" : "-");
     			printf( (fileStat.st_mode & S_IWOTH) ? "w" : "-");
     			printf( (fileStat.st_mode & S_IXOTH) ? "x" : "-");
+    			printf("\033[0m");
     			printf("]");
 		}
 		
 		else{
+			printf("\033[0;32m");
 			printf("%s",temp->name);
+			printf("\033[0m");
 		}
 	
 	}		
@@ -237,12 +249,17 @@ void display_tree(tree root  , int dep , char* opt ){
  
     
  			printf("%s  [",temp->name);
+ 			printf("\033[0;34m");
 			printf(" File Size: %ld bytes",fileStat.st_size);
+    			printf("\033[0m");
     			printf(" ]");
+    			
 		}
 		
 		else{
+			printf("\033[0;32m");
 			printf("%s",temp->name);
+			printf("\033[0m");
 		}
 	}
 	
@@ -259,9 +276,11 @@ void display_tree(tree root  , int dep , char* opt ){
     				// convert seconds to date and time format
     				dt = *(gmtime(&fileStat.st_ctime));
     				printf("%s [ ",temp->name);
+    				printf("\033[0;34m");
     				printf(" Created on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon, dt.tm_year + 1900, 
                               dt.tm_hour, dt.tm_min, dt.tm_sec);
                               printf(" ]");
+                              printf("\033[0m");
                               
 
 			       /* File modification time
@@ -272,13 +291,17 @@ void display_tree(tree root  , int dep , char* opt ){
 			}
 		
 			else{
+				
 				printf("%s",temp->name);
+				
 			}	
 
 		}
 		
 		else{
+			printf("\033[0;32m");
 			printf("%s",temp->name);
+			printf("\033[0m");
 		}
 	}
 	
@@ -293,8 +316,11 @@ void display_tree(tree root  , int dep , char* opt ){
     			/* File modification time  */
     				dt = *(gmtime(&fileStat.st_mtime));
     				printf("%s [",temp->name);
+    				printf("\033[0;34m");
     				printf("Modified on: %d-%d-%d %d:%d:%d", dt.tm_mday, dt.tm_mon+1, dt.tm_year + 1900, 
                                               dt.tm_hour, dt.tm_min, dt.tm_sec);
+                               printf("\033[0m");
+                               
                                printf("]"); 
 				//******************************************************
 			}
@@ -306,7 +332,9 @@ void display_tree(tree root  , int dep , char* opt ){
 		}
 		
 		else{
+			printf("\033[0;32m");
 			printf("%s",temp->name);
+			printf("\033[0m");
 		}
 	}
 	
@@ -316,16 +344,17 @@ void display_tree(tree root  , int dep , char* opt ){
 		display_tree(temp->child , dep , opt);
 		count--;
 	}
-	display_tree(temp->sibling , dep , opt);	
-
-}
-
-
-char* getpath(){
+	display_tree(temp->sibling , dep , opt);
 	
-	char *buf;
-	buf = (char *)malloc(100*sizeof(char));
-	getcwd(buf,100);
-	return buf ;
+	
+	
+		
+
 }
+
+void integer(){
+	
+	printf("Total directory : %d , Total files : %d",no_of_directory + 1,no_of_files);
+}
+
 
